@@ -8,6 +8,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.UserMessage;
 import io.smallrye.mutiny.Multi;
 import io.vertx.core.eventbus.Message;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -22,51 +23,41 @@ public class ThemePartChatBotImpl implements ThemeParkChatBot {
     StreamingChatModel streamingModel;
 
     private final ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
-
+    @PostConstruct  // 👈 Add this!
+    public void init() {
+        chatMemory.add(systemMessage("""
+        You are theme park assistant.
+        Answer ONLY about rides, ratings, waiting times.
+        Unknown questions: "I don't know"
+        Format: "RideName rating⭐ (X min wait)"
+        """));
+    }
 
     @Override
     public Multi<String> chat(String question) {
-        if (chatMemory.messages().isEmpty()) {
-            chatMemory.add(systemMessage("""
-                    You are an assistant for answering questions about the theme park.
-                    These questions can only be related to theme park.
-                    Examples of these questions can be:
-                    - Can you describe a given ride?
-                    - What is the minimum height to enter to a ride?
-                    - What rides can I access with my height?
-                    - What is the best ride at the moment?
-                    - What is the waiting time for a given ride?
-                    If questions are not about theme park or you don't know the answer,
-                    you should always return "I don't know".
-                    Don't give information that is wrong
-                    """)
+        chatMemory.add(userMessage(question));
 
-            );
-            chatMemory.add(userMessage("""
-                    The theme park user has the following question: {question}
-                    The answer must be max 2 lines.
-                    """));
-        }
         return Multi.createFrom().emitter(em ->
-                        streamingModel.chat(chatMemory.messages(),
-                                new StreamingChatResponseHandler() {
-                                    @Override
-                                    public void onPartialResponse(String partialResponse) {
-                                        em.emit(partialResponse);
-                                    }
+                streamingModel.chat(  // 👈 generate(), not stream()
+                        chatMemory.messages(),
+                        new StreamingChatResponseHandler() {
+                            @Override
+                            public void onPartialResponse(String partialResponse) {
+                                em.emit(partialResponse);
+                            }
 
-                                    @Override
-                                    public void onCompleteResponse(ChatResponse response) {
-                                        chatMemory.add(response.aiMessage());
-                                        em.complete();
-                                    }
+                            @Override
+                            public void onCompleteResponse(ChatResponse response) {
+                                chatMemory.add(response.aiMessage());
+                                em.complete();
+                            }
 
-                                    @Override
-                                    public void onError(Throwable error) {
-                                        em.fail(error);
-                                    }
-                                }
-                        )
-                );
+                            @Override
+                            public void onError(Throwable error) {
+                                em.fail(error);
+                            }
+                        }
+                )
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.t0in4;
 
+import dev.langchain4j.data.message.AiMessage;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.GET;
@@ -7,6 +8,9 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Path("/ride")
 public class RideResource {
@@ -34,15 +38,18 @@ public class RideResource {
     }
     @Inject
     ThemeParkChatBot themeParkChatBot;
-    @GET
-    @Path("/chat/best")
+    @GET @Path("/chat/best")
     public String askForTheBest() {
-        return this.themeParkChatBot
-                .chat("What is the best ride at the moment?")
+        List<String> tokens = themeParkChatBot
+                .chat("Best ride name + rating")
                 .collect().asList()
-                .await().indefinitely() // block and join stream
-                .stream()
-                .reduce("", (a,b) -> a+b);
+                .await().indefinitely();
+
+        return tokens.stream()
+                .filter(s -> s.length() > 1)  // Skip single chars
+                .map(String::trim)
+                .reduce((a, b) -> a + " " + b)
+                .orElse("No response");
     }
     @GET
     @Path("/chat/waiting")
@@ -52,7 +59,9 @@ public class RideResource {
                 .collect().asList()
                 .await().indefinitely()
                 .stream()
-                .reduce("", (a,b) -> a+b);
+                .map(Object::toString)
+                .filter(s -> !s.trim().isEmpty())  // Better filter
+                .collect(Collectors.joining(" "));  // ✅
     }
 
 }

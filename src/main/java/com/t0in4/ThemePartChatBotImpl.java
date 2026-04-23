@@ -13,6 +13,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.util.stream.Collectors;
+
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
 import static dev.langchain4j.data.message.UserMessage.userMessage;
 
@@ -22,36 +24,38 @@ public class ThemePartChatBotImpl implements ThemeParkChatBot {
     @Named("giga")
     StreamingChatModel streamingModel;
 
-    private final ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(10);
-    @PostConstruct  // 👈 Add this!
-    public void init() {
-        chatMemory.add(systemMessage("""
-        You are theme park assistant.
-        Answer ONLY about rides, ratings, waiting times.
-        Unknown questions: "I don't know"
-        Format: "RideName rating⭐ (X min wait)"
-        """));
-    }
+
 
     @Override
     public Multi<String> chat(String question) {
-        chatMemory.add(userMessage(question));
+        // 👈 NEW MEMORY EVERY TIME - no persistence issues!
+        ChatMemory tempMemory = MessageWindowChatMemory.withMaxMessages(5);
+        tempMemory.add(systemMessage("""
+                You are an assistant for answering questions about the theme park.
+                     These questions can only be related to theme park.
+                     Examples of these questions can be:
+                     - Can you describe a given ride?
+                     - What is the minimum height to enter to a ride?
+                     - What rides can I access with my height?
+                     - What is the best ride at the moment?
+                     - What is the waiting time for a given ride?
+                     If questions are not about theme park or you don't know the answer,
+                     you should always return "I don't know".
+                     Don't give information that is wrong
+    """));
+        tempMemory.add(userMessage(question));
 
         return Multi.createFrom().emitter(em ->
-                streamingModel.chat(  // 👈 generate(), not stream()
-                        chatMemory.messages(),
+                streamingModel.chat(tempMemory.messages(),
                         new StreamingChatResponseHandler() {
                             @Override
                             public void onPartialResponse(String partialResponse) {
                                 em.emit(partialResponse);
                             }
-
                             @Override
                             public void onCompleteResponse(ChatResponse response) {
-                                chatMemory.add(response.aiMessage());
                                 em.complete();
                             }
-
                             @Override
                             public void onError(Throwable error) {
                                 em.fail(error);

@@ -30,7 +30,7 @@ public class ChatModelConfig {
         return GigaChatStreamingChatModel.builder()
                 .authClient(authClient)
                 .defaultChatRequestParameters(GigaChatChatRequestParameters.builder()
-                        .modelName(ModelName.GIGA_CHAT_2)
+                        .modelName(ModelName.GIGA_CHAT_PRO)
                         .temperature(0.0)
                         .build())
                 .build();

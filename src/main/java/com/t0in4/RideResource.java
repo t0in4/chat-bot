@@ -15,8 +15,8 @@ public class RideResource {
     RideRepository rideRepository;
     @Inject
     WaitingTime waitingTime;
-    //@io.quarkus.runtime.Startup
-    //@jakarta.transaction.Transactional
+    @io.quarkus.runtime.Startup
+    @jakarta.transaction.Transactional
     public void populateData() {
         insertRides();
     }
@@ -48,7 +48,11 @@ public class RideResource {
     @Path("/chat/waiting")
     public String askForWaitingTime() {
         return this.themeParkChatBot
-                .chat("What is the waiting time for Dragon Fun ride?").toString();
+                .chat("What is the waiting time for Dragon Fun ride?")
+                .collect().asList()
+                .await().indefinitely()
+                .stream()
+                .reduce("", (a,b) -> a+b);
     }
 
 }

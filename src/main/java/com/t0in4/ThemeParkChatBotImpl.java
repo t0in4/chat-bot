@@ -67,11 +67,11 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 .collect(Collectors.joining("\n"));
     }
 
-    private StreamingChatResponseHandler handler(MultiEmitter<String> em) {  // Raw type
+  /*  private StreamingChatResponseHandler handler(MultiEmitter<String> em) {  // Raw type
         return new StreamingChatResponseHandler() {
             @Override public void onPartialResponse(String delta) { em.emit(delta); }
             @Override public void onCompleteResponse(ChatResponse r) { em.complete(); }
             @Override public void onError(Throwable e) { em.fail(e); }
         };
-    }
+    }*/
 }

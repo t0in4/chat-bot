@@ -63,5 +63,17 @@ public class RideResource {
                 .filter(s -> !s.trim().isEmpty())  // Better filter
                 .collect(Collectors.joining(" "));  // ✅
     }
+    @GET
+    @Path("/chat/ask-both")
+    public String askForBoth() {
+        this.themeParkChatBot.chat("What is the waiting time for Dragon Fun ride?");
+        return this.themeParkChatBot.chat("What is he waiting time for that?")
+                .collect().asList()
+                .await().indefinitely()
+                .stream()
+                .map(Object::toString)
+                .filter(s -> !s.trim().isEmpty())  // Better filter
+                .collect(Collectors.joining(" "));
+    }
 
 }

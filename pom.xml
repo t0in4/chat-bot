@@ -74,12 +74,12 @@
         <dependency>
             <groupId>chat.giga</groupId>
             <artifactId>langchain4j-gigachat</artifactId>
-            <version>0.1.14</version>
+            <version>0.1.19</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.13.0</version>
+            <version>1.14.0</version>
         </dependency>
 
         <dependency>
@@ -102,6 +102,21 @@
             <artifactId>quarkus-undertow</artifactId>
             <version>3.35.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next</artifactId>
+            <version>3.35.0</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>io.quarkiverse.langchain4j</groupId>
+            <artifactId>quarkus-langchain4j-memory-store-redis</artifactId>
+            <version>1.9.1</version>
+        </dependency>-->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets</artifactId>  <!-- ✅ JSR-356 annotations -->
+        </dependency>
+
     </dependencies>
 
     <build>

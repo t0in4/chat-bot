@@ -8,9 +8,11 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
@@ -21,10 +23,18 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
     @Inject @Named("giga") StreamingChatModel model;
     @Inject RideRepository rides;
     @Inject WaitingTime waitingTime;
+    @Inject RedisChatMemoryStore store;
 
     @Override
-    public Multi<String> chat(String question) {
-        ChatMemory memory = MessageWindowChatMemory.withMaxMessages(5);
+    public Multi<String> chat(String question, String sessionId) {
+        //ChatMemory memory = MessageWindowChatMemory.withMaxMessages(5);
+        String id = (sessionId == null || sessionId.isBlank()) ? "default-anonymous" : sessionId;
+        ChatMemory memory = MessageWindowChatMemory.builder()
+                .id(id) // unique per proxy instance
+                .maxMessages(10)
+                .chatMemoryStore(store)
+                .alwaysKeepSystemMessageFirst(true)
+                .build();
 
         String ridesData = getRidesSummary();
         String systemPrompt = """

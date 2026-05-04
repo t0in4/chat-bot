@@ -3,10 +3,7 @@ package com.t0in4;
 import dev.langchain4j.data.message.AiMessage;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 
 import java.util.List;
@@ -39,9 +36,10 @@ public class RideResource {
     @Inject
     ThemeParkChatBot themeParkChatBot;
     @GET @Path("/chat/best")
-    public String askForTheBest() {
+    public String askForTheBest(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "anonymous";
         List<String> tokens = themeParkChatBot
-                .chat("Best ride name + rating")
+                .chat("Best ride name + rating", id)
                 .collect().asList()
                 .await().indefinitely();
 
@@ -53,9 +51,10 @@ public class RideResource {
     }
     @GET
     @Path("/chat/waiting")
-    public String askForWaitingTime() {
+    public String askForWaitingTime(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "default-session";
         return this.themeParkChatBot
-                .chat("What is the waiting time for Dragon Fun ride?")
+                .chat("What is the waiting time for Dragon Fun ride?", id)
                 .collect().asList()
                 .await().indefinitely()
                 .stream()
@@ -65,9 +64,10 @@ public class RideResource {
     }
     @GET
     @Path("/chat/ask-both")
-    public String askForBoth() {
-        this.themeParkChatBot.chat("What is the waiting time for Dragon Fun ride?");
-        return this.themeParkChatBot.chat("What is he waiting time for that?")
+    public String askForBoth(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "default-session";
+        this.themeParkChatBot.chat("What is the waiting time for Dragon Fun ride?", id);
+        return this.themeParkChatBot.chat("What is he waiting time for that?", id)
                 .collect().asList()
                 .await().indefinitely()
                 .stream()

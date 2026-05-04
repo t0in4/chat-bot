@@ -35,6 +35,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 .chatMemoryStore(store)
                 .alwaysKeepSystemMessageFirst(true)
                 .build();
+        memory.clear();
 
         String ridesData = getRidesSummary();
         String systemPrompt = """

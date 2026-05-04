@@ -62,6 +62,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                     }
                     @Override
                     public void onCompleteResponse(ChatResponse response) {
+                        memory.add(response.aiMessage()); // persist for next turn
                         System.out.println("✅ COMPLETE RESPONSE: " + response.aiMessage());
                         em.emit("END"); // Signal completion
                         em.complete();

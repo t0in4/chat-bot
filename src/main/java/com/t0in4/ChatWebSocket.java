@@ -42,7 +42,7 @@ public class ChatWebSocket {
             System.err.println("ERROR: No session mapping for " + wsSessionId);
             return;
         }
-
+        System.out.println("onMessage: '" + question + "' for session " + sessionId);
         // Your existing reactive chain
         Uni.createFrom().item(() -> chatBot.chat(question, sessionId))
                 .runSubscriptionOn(Infrastructure.getDefaultWorkerPool())

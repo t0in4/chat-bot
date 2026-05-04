@@ -74,20 +74,31 @@
 
 <script>
     const ws = new WebSocket('ws://localhost:8080/chat');
+    let buffer = ''; // accumulate chunks here
     const chatBox = document.getElementById('chat-box');
     const messageInput = document.getElementById('message');
     const spinner = document.getElementById('spinner');
 
-    ws.onmessage = function(event) {
-        appendMessage('Bot: ' + event.data, 'left');
+
+ws.onmessage = function(event) {
+    const chunk = event.data;
+    if (chunk === 'END') {
+        // Complete response ready!
+        appendMessage('Bot: ' + buffer.trim(), 'left');
+        chatBox.scrollTop = chatBox.scrollHeight;
         spinner.style.display = 'none';
-    };
+        buffer = '';
+    } else if (chunk) {
+        buffer += chunk;
+    }
+};
 
     function sendMessage() {
         const message = messageInput.value.trim();
         if (message === '') return;
 
         appendMessage('You: ' + message, 'right');
+        buffer = '';
         messageInput.value = '';
         spinner.style.display = 'inline-block';
 

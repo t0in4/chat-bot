@@ -1,0 +1,16 @@
+  <!-- ws.onmessage = function(event) {
+        const chunk = event.data;
+    if (chunk) {
+        buffer += chunk;
+    }
+
+    spinner.style.display = 'none';
+    };
+    ws.onclose = function() {
+    if (isStreaming && buffer.trim()) {
+        appendMessage('Bot: ' + responseBuffer.trim(), 'left');
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    isStreaming = false;
+    buffer = '';
+};-->

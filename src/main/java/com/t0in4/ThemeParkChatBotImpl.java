@@ -56,14 +56,18 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 model.chat(memory.messages(), new StreamingChatResponseHandler() {
                     @Override
                     public void onPartialResponse(String partial) {
+                        System.out.println("🔥 CHUNK RECEIVED: '" + partial + "' (length: " + partial.length() + ")");
                         em.emit(partial);  // ✅ Direct em.emit()
                     }
                     @Override
                     public void onCompleteResponse(ChatResponse response) {
+                        System.out.println("✅ COMPLETE RESPONSE: " + response.aiMessage());
+                        em.emit("END"); // Signal completion
                         em.complete();
                     }
                     @Override
                     public void onError(Throwable error) {
+                        System.err.println("❌ STREAM ERROR: " + error);
                         em.fail(error);
                     }
                 })

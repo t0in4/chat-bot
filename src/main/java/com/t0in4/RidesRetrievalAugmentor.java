@@ -1,5 +1,6 @@
 package com.t0in4;
 
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
@@ -15,7 +16,7 @@ import java.util.function.Supplier;
 @ApplicationScoped
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     @Inject
-    RedisEmbeddingStore store;  // ✅ CDI from extension
+    EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
     @Inject @Named("giga-embed") EmbeddingModel model;        // Your GigaChat producer
 
     @Override

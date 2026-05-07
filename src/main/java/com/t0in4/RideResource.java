@@ -1,9 +1,10 @@
 package com.t0in4;
 
 import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
-import dev.langchain4j.store.embedding.redis.RedisEmbeddingStore;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
@@ -20,7 +21,7 @@ public class RideResource {
     @Inject
     EmbeddingModel embeddingModel;
     @Inject
-    RedisEmbeddingStore redisEmbeddingStore;
+    EmbeddingStore<TextSegment> embeddingStore;
     @Inject
     DocumentFromText documentFromText;
     @Inject
@@ -32,7 +33,7 @@ public class RideResource {
         List<Document> documents = documentFromText
                 .createDocuments(Paths.get("./ride"));
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
-                .embeddingStore(redisEmbeddingStore)
+                .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
                 .documentSplitter(recursive(300, 30))
                 .build();

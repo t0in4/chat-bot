@@ -133,6 +133,10 @@
             <artifactId>langchain4j-redis</artifactId>  <!-- Pure runtime -->
             <version>1.0.0-alpha1</version>
         </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+        </dependency>
 
     </dependencies>
 

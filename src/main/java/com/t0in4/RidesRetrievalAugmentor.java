@@ -2,6 +2,7 @@ package com.t0in4;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
@@ -17,7 +18,8 @@ import java.util.function.Supplier;
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     @Inject
     EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
-    @Inject @Named("giga-embed") EmbeddingModel model;        // Your GigaChat producer
+    @Inject @Named("local-embed")
+    EmbeddingModel model;        // Your GigaChat producer
 
     @Override
     public RetrievalAugmentor get() {  // Lazy init

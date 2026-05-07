@@ -3,10 +3,12 @@ package com.t0in4;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.ws.rs.*;
 
 import java.nio.file.Paths;
@@ -18,7 +20,7 @@ import static dev.langchain4j.data.document.splitter.DocumentSplitters.recursive
 @Path("/ride")
 public class RideResource {
     //@Inject EmbeddingModel embeddingModel;
-    @Inject
+    @Inject @Named("local-embed")
     EmbeddingModel embeddingModel;
     @Inject
     EmbeddingStore<TextSegment> embeddingStore;

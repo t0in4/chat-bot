@@ -19,7 +19,7 @@ public class ChatModelConfig {
     private static final Logger LOG = Logger.getLogger(ChatModelConfig.class.getName());
 
     @Produces
-    @Named("giga")
+    @Named("giga-chat")
     public StreamingChatModel chatLanguageModel() {
         Dotenv dotenv = Dotenv.load();
         String authKey = dotenv.get("GIGACHAT_AUTH_KEY");

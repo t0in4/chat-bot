@@ -1,10 +1,15 @@
 package com.t0in4;
 
+import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.rag.AugmentationRequest;
+import dev.langchain4j.rag.AugmentationResult;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.query.Metadata;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.subscription.MultiEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -12,6 +17,7 @@ import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -20,7 +26,8 @@ import static dev.langchain4j.data.message.UserMessage.userMessage;
 
 @ApplicationScoped
 public class ThemeParkChatBotImpl implements ThemeParkChatBot {
-    @Inject @Named("giga") StreamingChatModel model;
+    @Inject @Named("giga-chat") StreamingChatModel model;
+    @Inject RidesRetrievalAugmentor ridesAugmentor;
     @Inject RideRepository rides;
     @Inject WaitingTime waitingTime;
     @Inject RedisChatMemoryStore store;
@@ -29,6 +36,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
     public Multi<String> chat(String question, String sessionId) {
         //ChatMemory memory = MessageWindowChatMemory.withMaxMessages(5);
         String id = (sessionId == null || sessionId.isBlank()) ? "default-anonymous" : sessionId;
+        RetrievalAugmentor augmentor = ridesAugmentor.get();
         ChatMemory memory = MessageWindowChatMemory.builder()
                 .id(id) // unique per proxy instance
                 .maxMessages(10)
@@ -52,6 +60,11 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
 
         memory.add(systemMessage(systemPrompt));
         memory.add(userMessage(question));
+        ChatMessage latestUserMessage = memory.messages().get(memory.messages().size() - 1);
+        Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size()-1));
+        AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
+        AugmentationResult result = augmentor.augment(request);
+        memory.add(result.chatMessage());
 
         return Multi.createFrom().emitter(em ->
                 model.chat(memory.messages(), new StreamingChatResponseHandler() {

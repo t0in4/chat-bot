@@ -1,26 +1,49 @@
 package com.t0in4;
 
-import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import dev.langchain4j.store.embedding.redis.RedisEmbeddingStore;
+import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static dev.langchain4j.data.document.splitter.DocumentSplitters.recursive;
+
 @Path("/ride")
 public class RideResource {
-
+    //@Inject EmbeddingModel embeddingModel;
+    @Inject
+    EmbeddingModel embeddingModel;
+    @Inject
+    RedisEmbeddingStore redisEmbeddingStore;
+    @Inject
+    DocumentFromText documentFromText;
     @Inject
     RideRepository rideRepository;
     @Inject
     WaitingTime waitingTime;
+    @Startup
+    public void ingest() {
+        List<Document> documents = documentFromText
+                .createDocuments(Paths.get("./ride"));
+        EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+                .embeddingStore(redisEmbeddingStore)
+                .embeddingModel(embeddingModel)
+                .documentSplitter(recursive(300, 30))
+                .build();
+        ingestor.ingest(documents);
+    }
     @io.quarkus.runtime.Startup
     @jakarta.transaction.Transactional
     public void populateData() {
         insertRides();
     }
+
     private void insertRides() {
         Ride r1 = new Ride();
         r1.name = "Oncharted. My Penitence";

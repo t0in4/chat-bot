@@ -26,11 +26,17 @@ import static dev.langchain4j.data.message.UserMessage.userMessage;
 
 @ApplicationScoped
 public class ThemeParkChatBotImpl implements ThemeParkChatBot {
-    @Inject @Named("giga-chat") StreamingChatModel model;
-    @Inject RidesRetrievalAugmentor ridesAugmentor;
-    @Inject RideRepository rides;
-    @Inject WaitingTime waitingTime;
-    @Inject RedisChatMemoryStore store;
+    @Inject
+    @Named("giga-chat")
+    StreamingChatModel model;
+    @Inject
+    RidesRetrievalAugmentor ridesAugmentor;
+    @Inject
+    RideRepository rides;
+    @Inject
+    WaitingTime waitingTime;
+    @Inject
+    RedisChatMemoryStore store;
 
     @Override
     public Multi<String> chat(String question, String sessionId) {
@@ -50,18 +56,29 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
         You are a theme park assistant.
         Current rides data:
         %s
-        
         Answer using ONLY this data.
         Examples:
         - Best ride? → Highest rating ride name + rating⭐
         - Waiting time [ride]? → [ride]: XX minutes
         Unknown → "I don't know"
         """.formatted(ridesData);
+     /*   String systemPrompt = """
+                        CRITICAL RULES (NEVER VIOLATE):
+                                1. ONLY use EXACT text from provided context
+                                2. NO inventing rides, ratings, heights
+                                3. "no data" → "I don't know from ride data"
+                                4. List ONLY rides from context
+                
+                                RIDES DATA:
+                                %s
+                
+                                Question: %s
+                """.formatted(ridesData);*/
 
         memory.add(systemMessage(systemPrompt));
         memory.add(userMessage(question));
         ChatMessage latestUserMessage = memory.messages().get(memory.messages().size() - 1);
-        Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size()-1));
+        Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size() - 1));
         AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
         AugmentationResult result = augmentor.augment(request);
         memory.add(result.chatMessage());
@@ -73,6 +90,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                         System.out.println("🔥 CHUNK RECEIVED: '" + partial + "' (length: " + partial.length() + ")");
                         em.emit(partial);  // ✅ Direct em.emit()
                     }
+
                     @Override
                     public void onCompleteResponse(ChatResponse response) {
                         memory.add(response.aiMessage()); // persist for next turn
@@ -80,6 +98,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                         em.emit("END"); // Signal completion
                         em.complete();
                     }
+
                     @Override
                     public void onError(Throwable error) {
                         System.err.println("❌ STREAM ERROR: " + error);

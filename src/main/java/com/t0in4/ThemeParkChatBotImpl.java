@@ -1,5 +1,6 @@
 package com.t0in4;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -11,14 +12,10 @@ import dev.langchain4j.rag.AugmentationResult;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.query.Metadata;
 import io.smallrye.mutiny.Multi;
-import io.smallrye.mutiny.subscription.MultiEmitter;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
-import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
@@ -42,26 +39,38 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
     public Multi<String> chat(String question, String sessionId) {
         //ChatMemory memory = MessageWindowChatMemory.withMaxMessages(5);
         String id = (sessionId == null || sessionId.isBlank()) ? "default-anonymous" : sessionId;
-        RetrievalAugmentor augmentor = ridesAugmentor.get();
         ChatMemory memory = MessageWindowChatMemory.builder()
                 .id(id) // unique per proxy instance
                 .maxMessages(10)
                 .chatMemoryStore(store)
                 .alwaysKeepSystemMessageFirst(true)
                 .build();
-        memory.clear();
+        memory.add(userMessage(question));
+
+        RetrievalAugmentor augmentor = ridesAugmentor.get();
+        ChatMessage latestUserMessage = memory.messages().get(memory.messages().size() - 1);
+        Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size() - 1));
+        AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
+        AugmentationResult result = augmentor.augment(request);
+        result.contents().forEach(content -> {
+                    String rideText = content.textSegment().text();
+                    memory.add(new AiMessage("CONTENT:\n" + rideText));
+                }
+
+        );
+
 
         String ridesData = getRidesSummary();
         String systemPrompt = """
-        You are a theme park assistant.
-        Current rides data:
-        %s
-        Answer using ONLY this data.
-        Examples:
-        - Best ride? → Highest rating ride name + rating⭐
-        - Waiting time [ride]? → [ride]: XX minutes
-        Unknown → "I don't know"
-        """.formatted(ridesData);
+                You are a theme park assistant.
+                Current rides data:
+                %s
+                Answer using ONLY this data.
+                Examples:
+                - Best ride? → Highest rating ride name + rating⭐
+                - Waiting time [ride]? → [ride]: XX minutes
+                Unknown → "I don't know"
+                """.formatted(ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context
@@ -76,12 +85,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 """.formatted(ridesData);*/
 
         memory.add(systemMessage(systemPrompt));
-        memory.add(userMessage(question));
-        ChatMessage latestUserMessage = memory.messages().get(memory.messages().size() - 1);
-        Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size() - 1));
-        AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
-        AugmentationResult result = augmentor.augment(request);
-        memory.add(result.chatMessage());
+
 
         return Multi.createFrom().emitter(em ->
                 model.chat(memory.messages(), new StreamingChatResponseHandler() {

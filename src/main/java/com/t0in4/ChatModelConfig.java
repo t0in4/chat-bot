@@ -12,14 +12,20 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.ws.rs.Produces;
 
+import java.util.logging.Logger;
+
+@ApplicationScoped
 public class ChatModelConfig {
+    private static final Logger LOG = Logger.getLogger(ChatModelConfig.class.getName());
 
     @Produces
-    @Named("giga")
-    @ApplicationScoped // for quarkus scope
+    @Named("giga-chat")
     public StreamingChatModel chatLanguageModel() {
         Dotenv dotenv = Dotenv.load();
         String authKey = dotenv.get("GIGACHAT_AUTH_KEY");
+        if (authKey == null || authKey.isBlank()) {
+            throw new IllegalStateException("GIGACHAT_AUTH_KEY is required in .env");
+        }
         AuthClient authClient = AuthClient.builder()
                 .withOAuth(AuthClientBuilder.OAuthBuilder.builder()
                         .scope(Scope.GIGACHAT_API_PERS)
@@ -30,7 +36,7 @@ public class ChatModelConfig {
         return GigaChatStreamingChatModel.builder()
                 .authClient(authClient)
                 .defaultChatRequestParameters(GigaChatChatRequestParameters.builder()
-                        .modelName(ModelName.GIGA_CHAT_PRO)
+                        .modelName(ModelName.GIGA_CHAT_2)
                         .temperature(0.0)
                         .build())
                 .build();

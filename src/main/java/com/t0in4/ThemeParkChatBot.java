@@ -5,5 +5,5 @@ import dev.langchain4j.service.UserMessage;
 import io.smallrye.mutiny.Multi;
 
 public interface ThemeParkChatBot {
-    Multi<String> chat(String question);
+    Multi<String> chat(String question, String sessionId);
 }

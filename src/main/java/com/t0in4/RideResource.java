@@ -1,29 +1,52 @@
 package com.t0in4;
 
-import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.document.Document;
+import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.model.embedding.EmbeddingModel;
+import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
+import io.quarkus.runtime.Startup;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+import jakarta.inject.Named;
+import jakarta.ws.rs.*;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static dev.langchain4j.data.document.splitter.DocumentSplitters.recursive;
+
 @Path("/ride")
 public class RideResource {
-
+    //@Inject EmbeddingModel embeddingModel;
+    @Inject @Named("local-embed")
+    EmbeddingModel embeddingModel;
+    @Inject
+    EmbeddingStore<TextSegment> embeddingStore;
+    @Inject
+    DocumentFromText documentFromText;
     @Inject
     RideRepository rideRepository;
     @Inject
     WaitingTime waitingTime;
+    @Startup
+    public void ingest() {
+        List<Document> documents = documentFromText
+                .createDocuments(Paths.get("./ride"));
+        EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
+                .embeddingStore(embeddingStore)
+                .embeddingModel(embeddingModel)
+                .documentSplitter(recursive(300, 30))
+                .build();
+        ingestor.ingest(documents);
+    }
     @io.quarkus.runtime.Startup
     @jakarta.transaction.Transactional
     public void populateData() {
         insertRides();
     }
+
     private void insertRides() {
         Ride r1 = new Ride();
         r1.name = "Oncharted. My Penitence";
@@ -39,9 +62,10 @@ public class RideResource {
     @Inject
     ThemeParkChatBot themeParkChatBot;
     @GET @Path("/chat/best")
-    public String askForTheBest() {
+    public String askForTheBest(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "anonymous";
         List<String> tokens = themeParkChatBot
-                .chat("Best ride name + rating")
+                .chat("Best ride name + rating", id)
                 .collect().asList()
                 .await().indefinitely();
 
@@ -53,15 +77,29 @@ public class RideResource {
     }
     @GET
     @Path("/chat/waiting")
-    public String askForWaitingTime() {
+    public String askForWaitingTime(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "default-session";
         return this.themeParkChatBot
-                .chat("What is the waiting time for Dragon Fun ride?")
+                .chat("What is the waiting time for Dragon Fun ride?", id)
                 .collect().asList()
                 .await().indefinitely()
                 .stream()
                 .map(Object::toString)
                 .filter(s -> !s.trim().isEmpty())  // Better filter
                 .collect(Collectors.joining(" "));  // ✅
+    }
+    @GET
+    @Path("/chat/ask-both")
+    public String askForBoth(@QueryParam("sessionId") String sessionId) {
+        String id = (sessionId != null) ? sessionId : "default-session";
+        this.themeParkChatBot.chat("What is the waiting time for Dragon Fun ride?", id);
+        return this.themeParkChatBot.chat("What is he waiting time for that?", id)
+                .collect().asList()
+                .await().indefinitely()
+                .stream()
+                .map(Object::toString)
+                .filter(s -> !s.trim().isEmpty())  // Better filter
+                .collect(Collectors.joining(" "));
     }
 
 }

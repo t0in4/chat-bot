@@ -28,6 +28,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>io.quarkus.platform</groupId>
+                <artifactId>quarkus-langchain4j-bom</artifactId>
+                <version>${quarkus.platform.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -74,12 +81,12 @@
         <dependency>
             <groupId>chat.giga</groupId>
             <artifactId>langchain4j-gigachat</artifactId>
-            <version>0.1.14</version>
+            <version>0.1.19</version>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
-            <version>1.13.0</version>
+            <version>1.14.0</version>
         </dependency>
 
         <dependency>
@@ -101,6 +108,39 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-undertow</artifactId>
             <version>3.35.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets-next</artifactId>
+            <version>3.35.0</version>
+        </dependency>
+        <!--<dependency>
+            <groupId>io.quarkiverse.langchain4j</groupId>
+            <artifactId>quarkus-langchain4j-memory-store-redis</artifactId>
+            <version>1.9.1</version>
+        </dependency>-->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-websockets</artifactId>  <!-- ✅ JSR-356 annotations -->
+        </dependency>
+       <!-- <dependency>
+            <groupId>io.quarkiverse.langchain4j</groupId>
+            <artifactId>quarkus-langchain4j-redis</artifactId>
+            <version>1.10.0.CR1</version>
+        </dependency>-->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-redis</artifactId>  <!-- Pure runtime -->
+            <version>1.0.0-alpha1</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-onnx-scoring</artifactId>
+            <version>1.14.1-beta24</version>
         </dependency>
     </dependencies>
 

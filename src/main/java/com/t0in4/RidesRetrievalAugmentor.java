@@ -26,8 +26,8 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
         EmbeddingStoreContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(store)
                 .embeddingModel(model)
-                .maxResults(10)
-                .minScore(0.7)
+                .maxResults(50)
+                .minScore(0.3)
                 .build();
         return DefaultRetrievalAugmentor.builder()
                 .contentRetriever(retriever)

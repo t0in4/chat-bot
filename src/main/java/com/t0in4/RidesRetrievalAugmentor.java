@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     @Inject
     EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
-    @Inject
+    @Inject @Named("local-embed")
     EmbeddingModel model;        // Your GigaChat producer
 
     @Override

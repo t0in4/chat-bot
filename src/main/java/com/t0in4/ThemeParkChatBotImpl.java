@@ -63,19 +63,25 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
         String ridesData = getRidesSummary();
         String systemPrompt = """
                 You are a theme park assistant.
-                Current rides data:
-                %s
-                IMPORTANT INSTRUCTIONS: check the 'minimum height' value for each ride.
-                - If user height >= minimum height -> Ride is ACCESSIBLE.
-                - If user height < minimum height -> Ride is NOT ACCESSIBLE.
-                - If no length listed -> Assume accessible.
                 
-                Answer using ONLY this data.
-                Examples:
-                - Best ride? → Highest rating ride name + rating⭐
-                - Waiting time [ride]? → [ride]: XX minutes
-                Unknown → "I don't know"
-                """.formatted(ridesData);
+                      CRITICAL INSTRUCTIONS:
+                      1. The "Retrieved Context" below contains ONLY the rides that match the user's height requirements.
+                      2. If a ride is NOT present in the "Retrieved Context", it means the user is TOO SHORT for that ride.
+                      3. If the user asks about a specific ride and it is missing from the context, explicitly state:\s
+                         "You cannot access [Ride Name] because your height does not meet the minimum requirement."
+                      4. Do NOT invent height restrictions. Rely SOLELY on whether the ride appears in the context.
+                
+                      --- Retrieved Context (Accessible Rides) ---
+                      %s
+                
+                      --- Current Live Data (All Rides for Waiting Times) ---
+                      %s
+                
+                      Answer the user's question based ONLY on these rules.
+                """.formatted(result.contents().stream()
+                        .map(content -> content.textSegment().text())
+                        .collect(Collectors.joining("\n---\n")),
+                ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

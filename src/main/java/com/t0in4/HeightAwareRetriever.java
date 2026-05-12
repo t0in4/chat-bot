@@ -65,18 +65,4 @@ public class HeightAwareRetriever implements ContentRetriever {
 
 
     }
-
-    private Integer extractHeight(String text) {
-        Matcher matcher = HEIGHT_PATTERN.matcher(text);
-        if (matcher.find()) {
-            try {
-                return Integer.parseInt(matcher.group(1));
-            } catch (NumberFormatException e) {
-                return null;
-            }
-        }
-        return null;
-    }
-
-
 }

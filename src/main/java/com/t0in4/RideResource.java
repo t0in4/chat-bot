@@ -77,6 +77,7 @@ public class RideResource {
         } catch (IOException e) {
             throw new RuntimeException("Error scanning directory", e);
         }*/
+        System.out.println("ingest is running");
         List<TextSegment> segments = documentFromText.createTextSegments(Paths.get("./ride"));
         if (segments.isEmpty()) {
             System.err.println("No ride documents loaded!");

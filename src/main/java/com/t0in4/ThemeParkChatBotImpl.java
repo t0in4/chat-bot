@@ -18,6 +18,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
@@ -63,28 +66,50 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
 
 
         String ridesData = getRidesSummary();
-        String retrievedContext = result.contents().stream()
-                .map(Content::textSegment)
-                .map(TextSegment::text)
-                .collect(Collectors.joining("\n---\n"));
+        List<Content> retrievedContext = result.contents();
+        // Extract ride names from retrieved content
+        Set<String> accessibleRideNames = retrievedContents.stream()
+                .map(content -> {
+                    String text = content.textSegment().text();
+                    // Extract ride name from the text (adjust regex as needed)
+                    if (text.contains("Oncharted")) return "Oncharted. My Penitence";
+                    if (text.contains("Dragon Fun")) return "Dragon Fun";
+                    return null;
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+// Build a clear message about accessibility
+        StringBuilder accessibilityNote = new StringBuilder();
+        if (!accessibleRideNames.isEmpty()) {
+            accessibilityNote.append("✅ ACCESSIBLE RIDES (based on your height): ")
+                    .append(String.join(", ", accessibleRideNames))
+                    .append("\n");
+        }
+
+// Check which rides are NOT accessible
+        String[] allRideNames = {"Oncharted. My Penitence", "Dragon Fun"}; // Or get from rides.listAll()
+        for (String rideName : allRideNames) {
+            if (!accessibleRideNames.contains(rideName)) {
+                accessibilityNote.append("❌ NOT ACCESSIBLE: ").append(rideName)
+                        .append(" (height requirement not met)\n");
+            }
+        }
         String systemPrompt = """
                 You are a theme park assistant.
-                
-                      CRITICAL INSTRUCTIONS:
-                      1. The "Retrieved Context" below contains ONLY the rides that match the user's height requirements.
-                      2. If a ride is NOT present in the "Retrieved Context", it means the user is TOO SHORT for that ride.
-                      3. If the user asks about a specific ride and it is missing from the context, explicitly state:\s
-                         "You cannot access [Ride Name] because your height does not meet the minimum requirement."
-                      4. Do NOT invent height restrictions. Rely SOLELY on whether the ride appears in the context.
-                
-                      --- Retrieved Context (Accessible Rides) ---
-                      %s
-                
-                      --- Current Live Data (All Rides for Waiting Times) ---
-                      %s
-                
-                      Answer the user's question based ONLY on these rules.
-                """.formatted(retrievedContext, ridesData);
+    
+    CRITICAL RULES:
+    1. The "ACCESSIBLE RIDES" list below contains ONLY rides the user can access based on their height.
+    2. If a ride is listed as "NOT ACCESSIBLE", the user CANNOT ride it due to height restrictions.
+    3. Do NOT contradict this list. If a ride is not in "ACCESSIBLE RIDES", it is NOT available.
+    
+    %s
+    
+    Current Live Data (for waiting times and ratings only):
+    %s
+    
+    Answer the user's question using ONLY the accessibility information above.
+    """.formatted(accessibilityNote.toString(), ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

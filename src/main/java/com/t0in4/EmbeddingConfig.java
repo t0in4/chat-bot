@@ -14,6 +14,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 
+/*
 @ApplicationScoped
 class EmbeddingConfig {
     @Produces @Named("local-embed")
@@ -24,4 +25,4 @@ class EmbeddingConfig {
     EmbeddingStore<TextSegment> embeddingStore() {
         return new InMemoryEmbeddingStore<>();  // 384 dim auto-detected
     }
-}
+}*/

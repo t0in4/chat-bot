@@ -31,9 +31,7 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
                 .build();*/
         HeightAwareRetriever retriever = new HeightAwareRetriever(
                 store,
-                model,
-                10,
-                0.4
+                model
         );
         return DefaultRetrievalAugmentor.builder()
                 .contentRetriever(retriever)

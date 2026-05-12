@@ -2,6 +2,7 @@ package com.t0in4;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -10,6 +11,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.rag.AugmentationRequest;
 import dev.langchain4j.rag.AugmentationResult;
 import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.query.Metadata;
 import io.smallrye.mutiny.Multi;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -61,6 +63,10 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
 
 
         String ridesData = getRidesSummary();
+        String retrievedContext = result.contents().stream()
+                .map(Content::textSegment)
+                .map(TextSegment::text)
+                .collect(Collectors.joining("\n---\n"));
         String systemPrompt = """
                 You are a theme park assistant.
                 
@@ -78,10 +84,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                       %s
                 
                       Answer the user's question based ONLY on these rules.
-                """.formatted(result.contents().stream()
-                        .map(content -> content.textSegment().text())
-                        .collect(Collectors.joining("\n---\n")),
-                ridesData);
+                """.formatted(retrievedContext, ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

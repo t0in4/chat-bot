@@ -51,10 +51,17 @@ public class HeightAwareRetriever implements ContentRetriever {
             return matches.stream()
                     .filter(match -> {
                         Integer minHeight = match.embedded().metadata().getInteger("min_height_cm");
+                        String rideName = match.embedded().metadata().getString("file_name");
                         if (minHeight == null || minHeight == -1) {
                             return true;
                         }
-                        return finalUserHeight >= minHeight;
+                        boolean allowed = finalUserHeight >= minHeight;
+                        if (allowed) {
+                            System.out.println("✅ Keeping ride (height OK): " + rideName + " (min: " + minHeight + ")");
+                        } else {
+                            System.out.println("❌ Filtering out ride (too short): " + rideName + " (min: " + minHeight + ", user: " + finalUserHeight + ")");
+                        }
+                        return allowed;
                     })
                     .map(match -> Content.from(match.embedded()))
                     .collect(Collectors.toList());

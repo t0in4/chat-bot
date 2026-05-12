@@ -20,7 +20,7 @@ class EmbeddingConfig {
     AllMiniLmL6V2EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
-    @Produces
+    @Produces @Named("my-local-store")
     EmbeddingStore<TextSegment> embeddingStore() {
         return new InMemoryEmbeddingStore<>();  // 384 dim auto-detected
     }

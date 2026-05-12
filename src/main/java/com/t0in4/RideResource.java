@@ -2,9 +2,11 @@ package com.t0in4;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
+import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
+import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor;
 import io.quarkus.runtime.Startup;
@@ -30,7 +32,7 @@ public class RideResource {
     //@Inject EmbeddingModel embeddingModel;
     @Inject @Named("local-embed")
     EmbeddingModel embeddingModel;
-    @Inject
+    @Inject @Named("my-local-store")
     EmbeddingStore<TextSegment> embeddingStore;
     @Inject
     DocumentFromText documentFromText;
@@ -80,10 +82,12 @@ public class RideResource {
         System.out.println("ingest is running");
         List<TextSegment> segments = documentFromText.createTextSegments(Paths.get("./ride"));
         if (segments.isEmpty()) {
-            System.err.println("No ride documents loaded!");
+            System.err.println("No segments created!");
             return;
         }
-
+        List<Document> documents = segments.stream()
+                .map(segment -> Document.from(segment.text(), segment.metadata()))
+                .toList();
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
@@ -93,11 +97,17 @@ public class RideResource {
             System.out.println("Segment: " + seg.text().substring(0, 50) + "...");
             System.out.println("Metadata: " + seg.metadata().toMap());
         });
-        List<Document> documents = segments.stream()
-                        .map(segment -> Document.from(segment.text(), segment.metadata()))
-                                .toList();
+
         ingestor.ingest(documents);
-        System.out.println("✅ Successfully ingested " + segments.size() + " ride documents");
+        // ✅ DEBUG: Verify the store actually has data now
+        // We search for a generic term to see if anything is there
+        Embedding dummyQuery = embeddingModel.embed("ride").content();
+        var checkResult = embeddingStore.search(EmbeddingSearchRequest.builder()
+                .queryEmbedding(dummyQuery)
+                .maxResults(5)
+                .minScore(0.0)
+                .build());
+        System.out.println("✅ Ingestion complete. Store size check: Found " + checkResult.matches().size() + " items immediately after ingest.");
     }
     @io.quarkus.runtime.Startup
     @jakarta.transaction.Transactional

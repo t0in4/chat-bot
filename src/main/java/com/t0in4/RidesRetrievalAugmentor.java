@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 @ApplicationScoped
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
-    @Inject
+    @Inject @Named("my-local-store")
     EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
     @Inject @Named("local-embed")
     EmbeddingModel model;        // Your GigaChat producer
@@ -29,12 +29,13 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
                 .maxResults(10)
                 .minScore(0.3)
                 .build();*/
-        HeightAwareRetriever retriever = new HeightAwareRetriever(
+        System.out.println("Creating Augmentor with Store instance: " + store);
+      /*  HeightAwareRetriever retriever = new HeightAwareRetriever(
                 store,
                 model
-        );
+        );*/
         return DefaultRetrievalAugmentor.builder()
-                .contentRetriever(retriever)
+                .contentRetriever(new HeightAwareRetriever(store, model))
                 .build();
     }
 }

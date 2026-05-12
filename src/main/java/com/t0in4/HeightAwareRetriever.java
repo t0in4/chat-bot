@@ -44,7 +44,9 @@ public class HeightAwareRetriever implements ContentRetriever {
                 .maxResults(10)
                 .minScore(0.0)
                 .build();
+        System.out.println("🔍 Searching store... QueryEmbedding dimensions: " + queryEmbedding.vector().length);
         EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
+        System.out.println("🔍 Search Result Count: " + searchResult.matches().size()); // Should match the debug log you saw
         List<EmbeddingMatch<TextSegment>> matches = searchResult.matches();
         // DEBUG: Print what we found before filtering
         System.out.println("--- HeightAwareRetriever Debug ---");

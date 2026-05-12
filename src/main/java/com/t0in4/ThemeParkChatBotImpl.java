@@ -65,51 +65,32 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
         );
 
 
+        String retrievedContext = result.contents().stream()
+                .map(content -> content.textSegment().text())
+                .collect(Collectors.joining("\n\n"));
         String ridesData = getRidesSummary();
-        List<Content> retrievedContents = result.contents();
-        // Extract ride names from retrieved content
-        Set<String> accessibleRideNames = retrievedContents.stream()
-                .map(content -> {
-                    String text = content.textSegment().text();
-                    // Extract ride name from the text (adjust regex as needed)
-                    if (text.contains("Oncharted")) return "Oncharted. My Penitence";
-                    if (text.contains("Dragon Fun")) return "Dragon Fun";
-                    return null;
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-// Build a clear message about accessibility
-        StringBuilder accessibilityNote = new StringBuilder();
-        if (!accessibleRideNames.isEmpty()) {
-            accessibilityNote.append("✅ ACCESSIBLE RIDES (based on your height): ")
-                    .append(String.join(", ", accessibleRideNames))
-                    .append("\n");
-        }
-
-// Check which rides are NOT accessible
-        String[] allRideNames = {"Oncharted. My Penitence", "Dragon Fun"}; // Or get from rides.listAll()
-        for (String rideName : allRideNames) {
-            if (!accessibleRideNames.contains(rideName)) {
-                accessibilityNote.append("❌ NOT ACCESSIBLE: ").append(rideName)
-                        .append(" (height requirement not met)\n");
-            }
-        }
+        System.out.println("🔍 Retrieved Context for LLM:\n" + retrievedContext);
         String systemPrompt = """
                 You are a theme park assistant.
-    
-    CRITICAL RULES:
-    1. The "ACCESSIBLE RIDES" list below contains ONLY rides the user can access based on their height.
-    2. If a ride is listed as "NOT ACCESSIBLE", the user CANNOT ride it due to height restrictions.
-    3. Do NOT contradict this list. If a ride is not in "ACCESSIBLE RIDES", it is NOT available.
-    
-    %s
-    
-    Current Live Data (for waiting times and ratings only):
-    %s
-    
-    Answer the user's question using ONLY the accessibility information above.
-    """.formatted(accessibilityNote.toString(), ridesData);
+                
+                CRITICAL RULES FOR HEIGHT QUESTIONS:
+                1. The "Retrieved Accessible Rides" section below contains ONLY rides the user can access based on their height.
+                2. If a ride is NOT listed in "Retrieved Accessible Rides", it means the user DOES NOT meet the height requirement.
+                3. You MUST explicitly state that missing rides are inaccessible due to height restrictions.
+                4. Do NOT say "no height restriction mentioned" for rides that are missing from the list.
+                
+                Retrieved Accessible Rides (FILTERED by user height):
+                %s
+                
+                Current Live Data (All Rides for waiting times):
+                %s
+                
+                User Question: What rides can I access?
+                
+                Answer Logic:
+                - If a ride is in the "Retrieved Accessible Rides" list -> Say it is accessible.
+                - If a ride is in "Current Live Data" but NOT in "Retrieved Accessible Rides" -> Say "You cannot access [Ride Name] because your height does not meet the minimum requirement."
+                """.formatted(retrievedContext, ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

@@ -23,7 +23,7 @@ public class HeightAwareRetriever implements ContentRetriever {
 
     private static final Pattern HEIGHT_PATTERN = Pattern.compile("([0-9]+)\\s*cm", Pattern.CASE_INSENSITIVE);
     public HeightAwareRetriever(EmbeddingStore<TextSegment> embeddingStore,
-                                EmbeddingModel embeddingModel,
+                                EmbeddingModel embeddingModel
 
                                 ) {
         this.embeddingStore = embeddingStore;
@@ -47,23 +47,14 @@ public class HeightAwareRetriever implements ContentRetriever {
         EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
         List<EmbeddingMatch<TextSegment>> matches = searchResult.matches();
         if (userHeight != null) {
+            final int finalUserHeight = userHeight;
             return matches.stream()
                     .filter(match -> {
-                        Object minHeightObj = match.embedded().metadata().getInteger("min_height_cm");
-                        if (minHeightObj == null) {
+                        Integer minHeight = match.embedded().metadata().getInteger("min_height_cm");
+                        if (minHeight == null || minHeight == -1) {
                             return true;
                         }
-                        int minHeight;
-                        if (minHeightObj instanceof Number) {
-                            minHeight = ((Number) minHeightObj).intValue();
-                        } else {
-                            try {
-                                minHeight = Integer.parseInt(minHeightObj.toString());
-                            } catch (NumberFormatException e) {
-                                return true;
-                            }
-                        }
-                        return minHeight == -1 || userHeight >= minHeight;
+                        return finalUserHeight >= minHeight;
                     })
                     .map(match -> Content.from(match.embedded()))
                     .collect(Collectors.toList());

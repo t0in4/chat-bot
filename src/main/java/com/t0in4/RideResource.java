@@ -58,6 +58,9 @@ public class RideResource {
                             if (matcher.find()) {
                                 minHeight = Integer.parseInt(matcher.group(1));
                             }
+                            String heightInfo = (minHeight != null) ? String.format("\n[HEIGHT RESTRICTION: Minimum %d cm]", minHeight) : "\n[HEIGHT RESTRICTION: None specified]";
+                            String enrichedContent = heightInfo + "\n\n" + content;
+
                             Metadata metadata = Metadata.from(
                                     Map.of(
                                             "file_name", fileName,
@@ -66,6 +69,7 @@ public class RideResource {
                             );
                             TextSegment segment = TextSegment.from(content, metadata);
                             documents.add(Document.from(segment.text()));
+                            System.out.println("Ingested: " + fileName + " | Height" + (minHeight != null ? minHeight : "None"));
                         } catch (IOException e) {
                             throw new RuntimeException("Error reading file: " + path, e);
                         }
@@ -77,7 +81,7 @@ public class RideResource {
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
-                .documentSplitter(recursive(300, 30))
+                //.documentSplitter(recursive(300, 30))
                 .build();
         ingestor.ingest(documents);
     }

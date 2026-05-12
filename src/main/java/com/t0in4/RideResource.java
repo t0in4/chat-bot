@@ -42,7 +42,7 @@ public class RideResource {
     public void ingest() {
        /* List<Document> documents = documentFromText
                 .createDocuments(Paths.get("./ride"));*/
-        java.nio.file.Path rideDir = Paths.get("./ride");
+      /*  java.nio.file.Path rideDir = Paths.get("./ride");
         List<Document> documents = new ArrayList<>();
         try (Stream<java.nio.file.Path> paths = Files.walk(rideDir)) {
             paths.filter(Files::isRegularFile)
@@ -76,14 +76,23 @@ public class RideResource {
                     });
         } catch (IOException e) {
             throw new RuntimeException("Error scanning directory", e);
+        }*/
+        List<TextSegment> segments = documentFromText.createTextSegments(Paths.get("./ride"));
+        if (segments.isEmpty()) {
+            System.err.println("No ride documents loaded!");
+            return;
         }
 
         EmbeddingStoreIngestor ingestor = EmbeddingStoreIngestor.builder()
                 .embeddingStore(embeddingStore)
                 .embeddingModel(embeddingModel)
-                //.documentSplitter(recursive(300, 30))
+                .documentSplitter(recursive(300, 30))
                 .build();
+        List<Document> documents = segments.stream()
+                        .map(segment -> Document.from(segment.text(), segment.metadata()))
+                                .toList();
         ingestor.ingest(documents);
+        System.out.println("✅ Successfully ingested " + segments.size() + " ride documents");
     }
     @io.quarkus.runtime.Startup
     @jakarta.transaction.Transactional

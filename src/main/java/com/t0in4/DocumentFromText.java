@@ -26,8 +26,8 @@ public class DocumentFromText {
                         try {
                             String content = Files.readString(path);
                             String fileName = path.getFileName().toString();
-                            Integer minHeight = null;
-                            Pattern pattern = Pattern.compile("minimum height.*?is\\s+(\\d+)\\s*cm", Pattern.CASE_INSENSITIVE);
+                            Integer minHeight = -1;
+                            Pattern pattern = Pattern.compile("minimum height. *?is\\s+(\\d+)\\s*cm", Pattern.CASE_INSENSITIVE);
                             Matcher matcher = pattern.matcher(content);
                             if (matcher.find()) {
                                 minHeight = Integer.parseInt(matcher.group(1));

@@ -88,6 +88,10 @@ public class RideResource {
                 .embeddingModel(embeddingModel)
                 .documentSplitter(recursive(300, 30))
                 .build();
+        segments.forEach(seg -> {
+            System.out.println("Segment: " + seg.text().substring(0, 50) + "...");
+            System.out.println("Metadata: " + seg.metadata().toMap());
+        });
         List<Document> documents = segments.stream()
                         .map(segment -> Document.from(segment.text(), segment.metadata()))
                                 .toList();

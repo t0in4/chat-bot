@@ -46,6 +46,14 @@ public class HeightAwareRetriever implements ContentRetriever {
                 .build();
         EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
         List<EmbeddingMatch<TextSegment>> matches = searchResult.matches();
+        // DEBUG: Print what we found before filtering
+        System.out.println("--- HeightAwareRetriever Debug ---");
+        System.out.println("User Height Detected: " + userHeight);
+        System.out.println("Total Matches Found: " + matches.size());
+        for (EmbeddingMatch<TextSegment> m : matches) {
+            Object h = m.embedded().metadata().getInteger("min_height_cm");
+            System.out.println("Ride: " + m.embedded().metadata().getString("file_name") + " | Min Height Raw: " + h + " (Type: " + (h != null ? h.getClass().getSimpleName() : "null") + ")");
+        }
         if (userHeight != null) {
             final int finalUserHeight = userHeight;
             return matches.stream()

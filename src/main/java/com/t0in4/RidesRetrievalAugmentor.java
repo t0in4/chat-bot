@@ -18,19 +18,24 @@ import java.util.function.Supplier;
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     @Inject
     EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
-    @Inject @Named("local-embed")
+    @Inject
     EmbeddingModel model;        // Your GigaChat producer
 
     @Override
     public RetrievalAugmentor get() {  // Lazy init
-        EmbeddingStoreContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
+        /*EmbeddingStoreContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(store)
                 .embeddingModel(model)
                 .maxResults(10)
-                .minScore(0.7)
-                .build();
+                .minScore(0.3)
+                .build();*/
+        System.out.println("Creating Augmentor with Store instance: " + store);
+      /*  HeightAwareRetriever retriever = new HeightAwareRetriever(
+                store,
+                model
+        );*/
         return DefaultRetrievalAugmentor.builder()
-                .contentRetriever(retriever)
+                .contentRetriever(new HeightAwareRetriever(store, model))
                 .build();
     }
 }

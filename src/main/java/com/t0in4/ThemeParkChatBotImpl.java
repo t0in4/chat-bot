@@ -2,6 +2,7 @@ package com.t0in4;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.StreamingChatModel;
@@ -10,12 +11,16 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.rag.AugmentationRequest;
 import dev.langchain4j.rag.AugmentationResult;
 import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.Content;
 import dev.langchain4j.rag.query.Metadata;
 import io.smallrye.mutiny.Multi;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static dev.langchain4j.data.message.SystemMessage.systemMessage;
@@ -60,17 +65,32 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
         );
 
 
+        String retrievedContext = result.contents().stream()
+                .map(content -> content.textSegment().text())
+                .collect(Collectors.joining("\n\n"));
         String ridesData = getRidesSummary();
+        System.out.println("🔍 Retrieved Context for LLM:\n" + retrievedContext);
         String systemPrompt = """
                 You are a theme park assistant.
-                Current rides data:
+                
+                CRITICAL RULES FOR HEIGHT QUESTIONS:
+                1. The "Retrieved Accessible Rides" section below contains ONLY rides the user can access based on their height.
+                2. If a ride is NOT listed in "Retrieved Accessible Rides", it means the user DOES NOT meet the height requirement.
+                3. You MUST explicitly state that missing rides are inaccessible due to height restrictions.
+                4. Do NOT say "no height restriction mentioned" for rides that are missing from the list.
+                
+                Retrieved Accessible Rides (FILTERED by user height):
                 %s
-                Answer using ONLY this data.
-                Examples:
-                - Best ride? → Highest rating ride name + rating⭐
-                - Waiting time [ride]? → [ride]: XX minutes
-                Unknown → "I don't know"
-                """.formatted(ridesData);
+                
+                Current Live Data (All Rides for waiting times):
+                %s
+                
+                User Question: What rides can I access?
+                
+                Answer Logic:
+                - If a ride is in the "Retrieved Accessible Rides" list -> Say it is accessible.
+                - If a ride is in "Current Live Data" but NOT in "Retrieved Accessible Rides" -> Say "You cannot access [Ride Name] because your height does not meet the minimum requirement."
+                """.formatted(retrievedContext, ridesData);
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

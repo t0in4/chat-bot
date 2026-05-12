@@ -14,14 +14,15 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 
+/*
 @ApplicationScoped
 class EmbeddingConfig {
     @Produces @Named("local-embed")
     AllMiniLmL6V2EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
-    @Produces
+    @Produces @Named("my-local-store")
     EmbeddingStore<TextSegment> embeddingStore() {
         return new InMemoryEmbeddingStore<>();  // 384 dim auto-detected
     }
-}
+}*/

@@ -23,12 +23,18 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
 
     @Override
     public RetrievalAugmentor get() {  // Lazy init
-        EmbeddingStoreContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
+        /*EmbeddingStoreContentRetriever retriever = EmbeddingStoreContentRetriever.builder()
                 .embeddingStore(store)
                 .embeddingModel(model)
                 .maxResults(10)
                 .minScore(0.3)
-                .build();
+                .build();*/
+        HeightAwareRetriever retriever = new HeightAwareRetriever(
+                store,
+                model,
+                10,
+                0.4
+        );
         return DefaultRetrievalAugmentor.builder()
                 .contentRetriever(retriever)
                 .build();

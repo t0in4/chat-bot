@@ -66,7 +66,7 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
 
 
         String ridesData = getRidesSummary();
-        List<Content> retrievedContext = result.contents();
+        List<Content> retrievedContents = result.contents();
         // Extract ride names from retrieved content
         Set<String> accessibleRideNames = retrievedContents.stream()
                 .map(content -> {

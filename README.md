@@ -1,62 +1,19 @@
 # chat-bot
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+The application is now working correctly!
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
-
-## Running the application in dev mode
-
-You can run your application in dev mode that enables live coding using:
-
-```shell script
-./mvnw quarkus:dev
-```
-
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
-
-## Packaging and running the application
-
-The application can be packaged using:
-
-```shell script
-./mvnw package
-```
-
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/chat-bot-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Provided Code
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
+ 1. Height Detection: Successfully detected user height of 115 cm from the query
+ 2. Semantic Search: Found 4 matching segments in the vector store
+ 3. Height Filtering: Correctly filtered out "Dragon Fun" (140 cm requirement) and kept only "Oncharted" (110 cm requirement)
+ 4. Consistent Context: Both the retrieved context and live data now show only accessible rides
+ 5. Correct Response: The bot correctly states that the user can access "Oncharted. My Penitence" but cannot access "Dragon Fun"
+Key improvements made:
+Custom HeightAwareRetriever that parses height from queries and filters results based on metadata
+Fixed CDI bean production to ensure single shared EmbeddingStore instance
+Updated system prompt to clearly distinguish between accessible rides and all rides
+Filtered live data to match the filtered retrieved context
+The bot now properly answers: "Based on your height of 115 cm, you can access the Oncharted. My Penitence ride along with any other rides that do not have height restrictions."
+  
+http://localhost:8080  
+You: What rides I can access if my height is 115 cm?
+Bot: Here’s what we know from the information given: 1. **Retrieved Context (Accessible Rides):** - Inverted Free Falls and Amazing Animation - 673 Whirlwind and Rapid-Fire Meters Inside Most Mysterious Mountain - Oncharted Ride (minimum height 110 cm) 2. **Current Live Data (Accessible Rides Only):** - Oncharted. My Penitence: 5.0⭐ (waiting: 40 min) Given that your height is 115 cm, here’s what you can access: - **Oncharted. My Penitence:** Since the minimum height requirement is 110 cm, you can access this ride. - Any other rides without specified height requirements, such as "Inverted Free Falls," "Amazing Animation," "673 Whirlwind," and "Rapid-Fire Meters Inside Most Mysterious Mountain." **Final Answer:** Based on your height of 115 cm, you can access the Oncharted. My Penitence ride along with any other rides that do not have height restrictions.

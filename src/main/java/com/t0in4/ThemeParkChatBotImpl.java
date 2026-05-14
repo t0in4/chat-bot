@@ -57,40 +57,51 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
         Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size() - 1));
         AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
         AugmentationResult result = augmentor.augment(request);
-        result.contents().forEach(content -> {
-                    String rideText = content.textSegment().text();
-                    memory.add(new AiMessage("CONTENT:\n" + rideText));
-                }
+        List<Content> contents = result.contents();
 
-        );
+// 2. Extract the names of the ALLOWED rides from the filtered content
+        Set<String> allowedRideNames = contents.stream()
+                .map(content -> content.textSegment().metadata().getString("file_name"))
+                .filter(Objects::nonNull)
+                .map(name -> name.replace(".txt", "")) // Normalize name if needed
+                .collect(Collectors.toSet());
 
+// 3. Filter the LIVE data list to ONLY include allowed rides
+        String ridesData = rides.listAll().stream()
+                .filter(r -> {
+                    // Check if this ride's name matches an allowed file name
+                    // You might need to adjust the matching logic based on your file names vs DB names
+                    String normalizedName = r.name.toLowerCase().replace(" ", "").replace(".", "");
+                    return allowedRideNames.stream().anyMatch(allowed ->
+                            allowed.toLowerCase().replace(".txt", "").replace(" ", "").replace(".", "").contains(normalizedName) ||
+                                    normalizedName.contains(allowed.toLowerCase().replace(".txt", ""))
+                    );
+                })
+                .map(r -> "- " + r.name + ": " + r.rating + "⭐ (waiting: " +
+                        waitingTime.getWaitingTime(r.name) + " min)")
+                .collect(Collectors.joining("\n"));
 
-        String retrievedContext = result.contents().stream()
-                .map(content -> content.textSegment().text())
-                .collect(Collectors.joining("\n\n"));
-        String ridesData = getRidesSummary();
-        System.out.println("🔍 Retrieved Context for LLM:\n" + retrievedContext);
+// 4. Update System Prompt to be strict
         String systemPrompt = """
-                You are a theme park assistant.
-                
-                CRITICAL RULES FOR HEIGHT QUESTIONS:
-                1. The "Retrieved Accessible Rides" section below contains ONLY rides the user can access based on their height.
-                2. If a ride is NOT listed in "Retrieved Accessible Rides", it means the user DOES NOT meet the height requirement.
-                3. You MUST explicitly state that missing rides are inaccessible due to height restrictions.
-                4. Do NOT say "no height restriction mentioned" for rides that are missing from the list.
-                
-                Retrieved Accessible Rides (FILTERED by user height):
-                %s
-                
-                Current Live Data (All Rides for waiting times):
-                %s
-                
-                User Question: What rides can I access?
-                
-                Answer Logic:
-                - If a ride is in the "Retrieved Accessible Rides" list -> Say it is accessible.
-                - If a ride is in "Current Live Data" but NOT in "Retrieved Accessible Rides" -> Say "You cannot access [Ride Name] because your height does not meet the minimum requirement."
-                """.formatted(retrievedContext, ridesData);
+    You are a theme park assistant.
+    
+    CRITICAL RULES:
+    1. The "Retrieved Context" below contains ONLY rides the user can access based on their height.
+    2. The "Current Live Data" below ALSO contains ONLY rides the user can access.
+    3. If a ride is NOT present in these lists, the user CANNOT access it due to height restrictions.
+    4. Do NOT mention rides that are not in the provided lists.
+    
+    Retrieved Context (Accessible Rides):
+    %s
+    
+    Current Live Data (Accessible Rides Only):
+    %s
+    
+    Answer the user's question using ONLY the data above.
+    """.formatted(
+                contents.stream().map(c -> c.textSegment().text()).collect(Collectors.joining("\n\n")),
+                ridesData
+        );
      /*   String systemPrompt = """
                         CRITICAL RULES (NEVER VIOLATE):
                                 1. ONLY use EXACT text from provided context

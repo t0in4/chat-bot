@@ -30,7 +30,7 @@ import static dev.langchain4j.data.document.splitter.DocumentSplitters.recursive
 @Path("/ride")
 public class RideResource {
     //@Inject EmbeddingModel embeddingModel;
-    @Inject
+    @Inject @Named("local-embed")
     EmbeddingModel embeddingModel;
     @Inject
     EmbeddingStore<TextSegment> embeddingStore;

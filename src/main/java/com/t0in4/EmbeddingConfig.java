@@ -10,19 +10,19 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import dev.langchain4j.store.embedding.redis.RedisEmbeddingStore;
 import io.github.cdimascio.dotenv.Dotenv;
+import io.quarkus.arc.DefaultBean;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Named;
 
-/*
 @ApplicationScoped
 class EmbeddingConfig {
     @Produces @Named("local-embed")
     AllMiniLmL6V2EmbeddingModel embeddingModel() {
         return new AllMiniLmL6V2EmbeddingModel();
     }
-    @Produces @Named("my-local-store")
+    @Produces @ApplicationScoped @DefaultBean
     EmbeddingStore<TextSegment> embeddingStore() {
         return new InMemoryEmbeddingStore<>();  // 384 dim auto-detected
     }
-}*/
+}

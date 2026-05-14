@@ -11,6 +11,7 @@ import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.redis.RedisEmbeddingStore;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -32,14 +33,20 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     //reramking model and tokenizer https://huggingface.co/BAAI/bge-reranker-large/tree/main
     @ConfigProperty(name = "embedding.model.path", defaultValue = "protected")
     String modelDir;
-    Path modelPath = Paths.get(modelDir, "model.onnx").toAbsolutePath().normalize();
-    Path tokenizerPath = Paths.get(modelDir, "tokenizer.json").toAbsolutePath().normalize();
-    OnnxScoringModel scoringModel = new OnnxScoringModel(modelPath.toString(), tokenizerPath.toString());
-    // Content aggregator adds/removes/sorts content
-    ContentAggregator contentAggregator = ReRankingContentAggregator.builder()
-            .scoringModel(scoringModel)
-            .minScore(0.8)
-            .build();
+    OnnxScoringModel scoringModel;
+    ContentAggregator contentAggregator;
+
+    @PostConstruct
+    void init() {
+        Path modelPath = Paths.get(modelDir, "model.onnx").toAbsolutePath().normalize();
+        Path tokenizerPath = Paths.get(modelDir, "tokenizer.json").toAbsolutePath().normalize();
+        scoringModel = new OnnxScoringModel(modelPath.toString(), tokenizerPath.toString());
+        // Content aggregator adds/removes/sorts content
+        contentAggregator = ReRankingContentAggregator.builder()
+                .scoringModel(scoringModel)
+                .minScore(0.8)
+                .build();
+    }
 
     @Override
     public RetrievalAugmentor get() {  // Lazy init

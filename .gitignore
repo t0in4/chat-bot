@@ -1,5 +1,6 @@
 .env
 #Maven
+protected/
 target/
 pom.xml.tag
 pom.xml.releaseBackup

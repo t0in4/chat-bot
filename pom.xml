@@ -142,6 +142,11 @@
             <artifactId>langchain4j-onnx-scoring</artifactId>
             <version>1.14.1-beta24</version>
         </dependency>
+        <dependency>
+            <groupId>com.microsoft.onnxruntime</groupId>
+            <artifactId>onnxruntime</artifactId>
+            <version>1.18.0</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -13,20 +13,23 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.function.Supplier;
 
 @ApplicationScoped
 public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
+
     @Inject
-    EmbeddingStore<TextSegment> store;  // ✅ CDI from extension
+    EmbeddingStore<TextSegment> store;
+
     @Inject
     @Named("local-embed")
     EmbeddingModel model;
 
-    //reramking model and tokenizer https://huggingface.co/BAAI/bge-reranker-large/tree/main
-    @ConfigProperty(name = "embedding.model.path", defaultValue = "protected")
+    @ConfigProperty(name = "embedding.model.path")
     String modelDir;
 
     private RetrievalAugmentor augmentor;
@@ -35,23 +38,37 @@ public class RidesRetrievalAugmentor implements Supplier<RetrievalAugmentor> {
     void init() {
         Path modelPath = Paths.get(modelDir, "model.onnx").toAbsolutePath().normalize();
         Path tokenizerPath = Paths.get(modelDir, "tokenizer.json").toAbsolutePath().normalize();
+
+        System.out.println("modelPath = " + modelPath);
+        System.out.println("tokenizerPath = " + tokenizerPath);
+
+        if (!Files.exists(modelPath)) {
+            throw new IllegalStateException("Missing model file: " + modelPath);
+        }
+        if (!Files.exists(tokenizerPath)) {
+            throw new IllegalStateException("Missing tokenizer file: " + tokenizerPath);
+        }
+        long tO = System.currentTimeMillis();
         System.out.println("before OnnxScoringModel");
         OnnxScoringModel scoringModel = new OnnxScoringModel(modelPath.toString(), tokenizerPath.toString());
-        System.out.println("after OnnxScoringModel");
-        // Content aggregator adds/removes/sorts content
+        System.out.println("after OnnxScoringModel, ms=" + (System.currentTimeMillis() - tO));
+
         ContentAggregator contentAggregator = ReRankingContentAggregator.builder()
                 .scoringModel(scoringModel)
                 .minScore(0.8)
                 .build();
+
         augmentor = DefaultRetrievalAugmentor.builder()
                 .contentRetriever(new HeightAwareRetriever(store, model))
-                .contentAggregator(contentAggregator)
+                //.contentAggregator(contentAggregator)
                 .build();
     }
 
     @Override
-    public RetrievalAugmentor get() {  // Lazy init
-        System.out.println("Creating Augmentor with Store instance: " + store);
+    public RetrievalAugmentor get() {
+        if (augmentor == null) {
+            throw new IllegalStateException("Augmentor not initialized");
+        }
         return augmentor;
     }
 }

@@ -32,6 +32,7 @@ public class HeightAwareRetriever implements ContentRetriever {
 
     @Override
     public List<Content> retrieve(Query query) {
+        System.out.println("HeightAwareRetriever.retrieve ENTER: " + query.text());
         String queryText = query.text();
         Integer userHeight = null;
         Matcher matcher = HEIGHT_PATTERN.matcher(queryText);
@@ -39,6 +40,7 @@ public class HeightAwareRetriever implements ContentRetriever {
             userHeight = Integer.parseInt(matcher.group(1));
         }
         Embedding queryEmbedding = embeddingModel.embed(queryText).content();
+        System.out.println("HeightAwareRetriever.retrieve AFTER EMBED");
         EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
                 .queryEmbedding(queryEmbedding)
                 .maxResults(10)

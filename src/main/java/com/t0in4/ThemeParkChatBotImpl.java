@@ -51,21 +51,26 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 .alwaysKeepSystemMessageFirst(true)
                 .build();
         memory.add(userMessage(question));
-
+        System.out.println("🔧 Getting RetrievalAugmentor...");
         RetrievalAugmentor augmentor = ridesAugmentor.get();
+        System.out.println("✅ Augmentor obtained: " + augmentor);
         ChatMessage latestUserMessage = memory.messages().get(memory.messages().size() - 1);
         Metadata metadata = Metadata.from(latestUserMessage, id, memory.messages().subList(0, memory.messages().size() - 1));
         AugmentationRequest request = new AugmentationRequest(latestUserMessage, metadata);
+        System.out.println("🔍 Starting augmentation with query: " + latestUserMessage);
         AugmentationResult result = augmentor.augment(request);
         List<Content> contents = result.contents();
+        System.out.println("📦 Augmentation complete. Retrieved " + contents.size() + " content items.");
 
 // 2. Extract the names of the ALLOWED rides from the filtered content
+        System.out.println("🎢 Processing " + contents.size() + " content items to extract allowed ride names...");
         Set<String> allowedRideNames = contents.stream()
                 .map(content -> content.textSegment().metadata().getString("file_name"))
                 .filter(Objects::nonNull)
                 .map(name -> name.replace(".txt", "")) // Normalize name if needed
                 .collect(Collectors.toSet());
-
+        System.out.println("✅ Allowed ride names extracted: " + allowedRideNames);
+        System.out.println("📋 Fetching all rides from repository...");
 // 3. Filter the LIVE data list to ONLY include allowed rides
         String ridesData = rides.listAll().stream()
                 .filter(r -> {
@@ -80,44 +85,33 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 .map(r -> "- " + r.name + ": " + r.rating + "⭐ (waiting: " +
                         waitingTime.getWaitingTime(r.name) + " min)")
                 .collect(Collectors.joining("\n"));
-
+        System.out.println("📊 Filtered rides data:\n" + ridesData);
 // 4. Update System Prompt to be strict
         String systemPrompt = """
-    You are a theme park assistant.
-    
-    CRITICAL RULES:
-    1. The "Retrieved Context" below contains ONLY rides the user can access based on their height.
-    2. The "Current Live Data" below ALSO contains ONLY rides the user can access.
-    3. If a ride is NOT present in these lists, the user CANNOT access it due to height restrictions.
-    4. Do NOT mention rides that are not in the provided lists.
-    
-    Retrieved Context (Accessible Rides):
-    %s
-    
-    Current Live Data (Accessible Rides Only):
-    %s
-    
-    Answer the user's question using ONLY the data above.
-    """.formatted(
+                You are a theme park assistant.
+                
+                CRITICAL RULES:
+                1. The "Retrieved Context" below contains ONLY rides the user can access based on their height.
+                2. The "Current Live Data" below ALSO contains ONLY rides the user can access.
+                3. If a ride is NOT present in these lists, the user CANNOT access it due to height restrictions.
+                4. Do NOT mention rides that are not in the provided lists.
+                
+                Retrieved Context (Accessible Rides):
+                %s
+                
+                Current Live Data (Accessible Rides Only):
+                %s
+                
+                Answer the user's question using ONLY the data above.
+                """.formatted(
                 contents.stream().map(c -> c.textSegment().text()).collect(Collectors.joining("\n\n")),
                 ridesData
         );
-     /*   String systemPrompt = """
-                        CRITICAL RULES (NEVER VIOLATE):
-                                1. ONLY use EXACT text from provided context
-                                2. NO inventing rides, ratings, heights
-                                3. "no data" → "I don't know from ride data"
-                                4. List ONLY rides from context
-                
-                                RIDES DATA:
-                                %s
-                
-                                Question: %s
-                """.formatted(ridesData);*/
-
+        System.out.println("📝 System prompt created (length: " + systemPrompt.length() + ")");
+        System.out.println("💾 Adding system message to memory...");
         memory.add(systemMessage(systemPrompt));
 
-
+        System.out.println("🚀 Sending request to streaming chat model...");
         return Multi.createFrom().emitter(em ->
                 model.chat(memory.messages(), new StreamingChatResponseHandler() {
                     @Override
@@ -150,11 +144,4 @@ public class ThemeParkChatBotImpl implements ThemeParkChatBot {
                 .collect(Collectors.joining("\n"));
     }
 
-  /*  private StreamingChatResponseHandler handler(MultiEmitter<String> em) {  // Raw type
-        return new StreamingChatResponseHandler() {
-            @Override public void onPartialResponse(String delta) { em.emit(delta); }
-            @Override public void onCompleteResponse(ChatResponse r) { em.complete(); }
-            @Override public void onError(Throwable e) { em.fail(e); }
-        };
-    }*/
 }

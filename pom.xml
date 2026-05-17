@@ -147,6 +147,10 @@
             <artifactId>onnxruntime</artifactId>
             <version>1.18.0</version>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-client-jackson</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

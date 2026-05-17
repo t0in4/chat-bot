@@ -20,4 +20,5 @@ print(f"Done! New file: {output_path}")
 After running this:
 Update your Java code to point to model_merged.onnx.
 You can delete model.onnx_data afterwards.
+You have to download model.onnx_data size is 2 Gb
 """
